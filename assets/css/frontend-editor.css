@@ -1,0 +1,105 @@
+/* UP Frontend Editor - Styles */
+
+.up-frontend-editor-toolbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1d2327;
+  color: #fff;
+  z-index: 99999;
+  box-shadow: 0 -2px 10px rgba(0,0,0,.25);
+}
+
+.up-frontend-editor-toolbar .up-toolbar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
+}
+
+.up-toolbar-title {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.up-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+}
+
+.up-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+.up-toggle-label {
+  font-size: 13px;
+}
+
+.up-save-button,
+.up-cancel-button {
+  background: #2271b1;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.up-cancel-button {
+  background: #50575e;
+}
+
+.up-save-button[disabled],
+.up-cancel-button[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Editable states */
+.up-editable {
+  outline: 2px dashed transparent;
+  transition: outline-color .15s ease;
+}
+
+.up-editable.up-hover {
+  outline-color: rgba(34,113,177,.35);
+}
+
+.up-editable.up-focused {
+  outline-color: rgba(34,113,177,.8);
+  background: rgba(34,113,177,.05);
+}
+
+/* Notices */
+.up-editor-notice {
+  position: fixed;
+  bottom: 64px;
+  right: 16px;
+  background: #1d2327;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 100000;
+}
+
+.up-editor-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.up-notice-success { background: #108a00; }
+.up-notice-error { background: #b32d2e; }
+.up-notice-info { background: #1d2327; }
