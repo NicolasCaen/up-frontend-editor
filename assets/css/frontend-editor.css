@@ -65,18 +65,116 @@
 }
 
 /* Editable states */
-.up-editable {
+.up-editable,
+.up-editable-title {
   outline: 2px dashed transparent;
   transition: outline-color .15s ease;
 }
 
-.up-editable.up-hover {
+.up-editable.up-hover,
+.up-editable-title:hover {
   outline-color: rgba(34,113,177,.35);
 }
 
-.up-editable.up-focused {
+.up-editable.up-focused,
+.up-editable-title:focus {
   outline-color: rgba(34,113,177,.8);
   background: rgba(34,113,177,.05);
+}
+
+.up-editable-title {
+  display: inline-block;
+  min-width: 100px;
+}
+
+/* Images éditables */
+.up-image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.up-image-wrapper img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.up-image-edit-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(34, 113, 177, 0.95);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
+.up-image-wrapper:hover .up-image-edit-btn {
+  opacity: 1;
+}
+
+.up-image-edit-btn:hover {
+  background: rgba(34, 113, 177, 1);
+  transform: scale(1.1);
+}
+
+.up-image-edit-btn .dashicons {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Bannières (blocs cover) */
+.wp-block-cover.up-has-editable-image {
+  position: relative;
+}
+
+.up-cover-edit-btn {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  background: rgba(34, 113, 177, 0.95) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: opacity .2s ease, transform .2s ease !important;
+  z-index: 999 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3) !important;
+}
+
+.wp-block-cover:hover .up-cover-edit-btn,
+.up-has-editable-image:hover .up-cover-edit-btn {
+  opacity: 1 !important;
+}
+
+.up-cover-edit-btn:hover {
+  background: rgba(34, 113, 177, 1) !important;
+  transform: scale(1.1) !important;
+}
+
+.up-cover-edit-btn .dashicons {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  line-height: 20px !important;
 }
 
 /* Notices */

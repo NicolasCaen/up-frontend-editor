@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modules ES6 - UP Frontend Editor</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        h1 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test des Modules ES6</h1>
+    <p>Cette page teste le chargement des modules JavaScript.</p>
+    
+    <div id="results"></div>
+    
+    <h2>Console</h2>
+    <pre id="console"></pre>
+
+    <script type="module">
+        const results = document.getElementById('results');
+        const consoleOutput = document.getElementById('console');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        function log(message) {
+            consoleOutput.textContent += message + '\n';
+            console.log(message);
+        }
+
+        // Test 1: Import de la classe de base
+        try {
+            const { BlockHandler } = await import('./assets/js/core/block-handler.js');
+            addResult('✅ BlockHandler importé avec succès', 'success');
+            log('BlockHandler: ' + typeof BlockHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de BlockHandler: ' + error.message, 'error');
+            log('Erreur BlockHandler: ' + error.message);
+        }
+
+        // Test 2: Import du MediaManager
+        try {
+            const { MediaManager } = await import('./assets/js/utils/media-manager.js');
+            addResult('✅ MediaManager importé avec succès', 'success');
+            log('MediaManager: ' + typeof MediaManager);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de MediaManager: ' + error.message, 'error');
+            log('Erreur MediaManager: ' + error.message);
+        }
+
+        // Test 3: Import de l'AjaxHandler
+        try {
+            const { AjaxHandler } = await import('./assets/js/utils/ajax-handler.js');
+            addResult('✅ AjaxHandler importé avec succès', 'success');
+            log('AjaxHandler: ' + typeof AjaxHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de AjaxHandler: ' + error.message, 'error');
+            log('Erreur AjaxHandler: ' + error.message);
+        }
+
+        // Test 4: Import de CoverBlockHandler
+        try {
+            const { CoverBlockHandler } = await import('./assets/js/blocks/cover-block.js');
+            addResult('✅ CoverBlockHandler importé avec succès', 'success');
+            log('CoverBlockHandler: ' + typeof CoverBlockHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de CoverBlockHandler: ' + error.message, 'error');
+            log('Erreur CoverBlockHandler: ' + error.message);
+        }
+
+        // Test 5: Import de ImageBlockHandler
+        try {
+            const { ImageBlockHandler } = await import('./assets/js/blocks/image-block.js');
+            addResult('✅ ImageBlockHandler importé avec succès', 'success');
+            log('ImageBlockHandler: ' + typeof ImageBlockHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de ImageBlockHandler: ' + error.message, 'error');
+            log('Erreur ImageBlockHandler: ' + error.message);
+        }
+
+        // Test 6: Import de TextBlocksHandler
+        try {
+            const { TextBlocksHandler } = await import('./assets/js/blocks/text-blocks.js');
+            addResult('✅ TextBlocksHandler importé avec succès', 'success');
+            log('TextBlocksHandler: ' + typeof TextBlocksHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de TextBlocksHandler: ' + error.message, 'error');
+            log('Erreur TextBlocksHandler: ' + error.message);
+        }
+
+        // Test 7: Import de TitleBlockHandler
+        try {
+            const { TitleBlockHandler } = await import('./assets/js/blocks/title-block.js');
+            addResult('✅ TitleBlockHandler importé avec succès', 'success');
+            log('TitleBlockHandler: ' + typeof TitleBlockHandler);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de TitleBlockHandler: ' + error.message, 'error');
+            log('Erreur TitleBlockHandler: ' + error.message);
+        }
+
+        // Test 8: Import de EditorManager
+        try {
+            const { EditorManager } = await import('./assets/js/core/editor-manager.js');
+            addResult('✅ EditorManager importé avec succès', 'success');
+            log('EditorManager: ' + typeof EditorManager);
+        } catch (error) {
+            addResult('❌ Erreur lors de l\'import de EditorManager: ' + error.message, 'error');
+            log('Erreur EditorManager: ' + error.message);
+        }
+
+        // Test final
+        addResult('🎉 Tous les modules sont chargés correctement !', 'success');
+        log('\n✅ Test terminé avec succès');
+    </script>
+</body>
+</html>
