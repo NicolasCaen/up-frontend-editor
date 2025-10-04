@@ -8,6 +8,7 @@
     
     let hasChanges = false;
     let originalContent = '';
+    let baseSerialized = '';
     
     $(document).ready(function() {
         
@@ -42,9 +43,42 @@
             addImageEditButtons();
         }, 100);
         
-        // Sauvegarder le contenu original
+        // Charger le HTML éditable via REST pour garantir data-upfe-* et contenteditable
         const $editableContent = $('.up-editable-content');
-        if ($editableContent.length) {
+        // Diagnostics
+        try { console.log('[UPFE] canEdit:', upFrontendEditor?.canEdit, 'enabled:', upFrontendEditor?.enabled, 'postId:', upFrontendEditor?.postId); } catch(e){}
+        // Fallback restUrl if absent
+        if (!upFrontendEditor.restUrl) {
+            try { upFrontendEditor.restUrl = new URL('/wp-json/up-fe/v1/', window.location.origin).toString(); } catch(e){}
+        }
+        try { console.log('[UPFE] restUrl:', upFrontendEditor?.restUrl); } catch(e){}
+
+        if ($editableContent.length && upFrontendEditor.restUrl) {
+            console.log('[UPFE] Fetch blocks via REST…');
+            fetch(upFrontendEditor.restUrl + 'blocks/' + upFrontendEditor.postId, {
+                credentials: 'same-origin',
+                headers: { 'X-WP-Nonce': upFrontendEditor.restNonce }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.rendered_html) {
+                    $editableContent.html(data.rendered_html);
+                }
+                if (data && data.serialized) {
+                    baseSerialized = data.serialized;
+                }
+                // Sauvegarder le contenu original après chargement
+                originalContent = $editableContent.html();
+                
+                // Ajouter les boutons d'édition d'images
+                setTimeout(addImageEditButtons, 50);
+            })
+            .catch((err) => {
+                console.error('[UPFE] REST GET blocks failed:', err);
+                // Fallback: garder le HTML courant
+                originalContent = $editableContent.html();
+            });
+        } else if ($editableContent.length) {
             originalContent = $editableContent.html();
         }
         
@@ -168,35 +202,46 @@
                     // Pour les blocs cover, mettre à jour l'image de fond
                     const $cover = $img.closest('.wp-block-cover');
                     
-                    // Chercher le div avec background-image
-                    let $bgDiv = $cover.find('.wp-block-cover__image-background');
+                    // Chercher l'élément avec classe wp-block-cover__image-background (img ou div)
+                    let $bgElement = $cover.find('.wp-block-cover__image-background');
                     
-                    if ($bgDiv.length > 0) {
-                        // Mettre à jour le background-image du div
-                        $bgDiv.css('background-image', 'url(' + attachment.url + ')');
-                        $bgDiv.attr('data-attachment-id', attachment.id || '');
-                        
-                        // Ajouter la classe wp-image-X si on a un ID
-                        if (attachment.id) {
-                            $bgDiv.removeClass(function(index, className) {
-                                return (className.match(/(^|\s)wp-image-\S+/g) || []).join(' ');
-                            });
-                            $bgDiv.addClass('wp-image-' + attachment.id);
+                    if ($bgElement.length > 0) {
+                        // Vérifier si c'est une img ou un div
+                        if ($bgElement.is('img')) {
+                            // C'est une image: mettre à jour le src
+                            $bgElement.attr('src', attachment.url);
+                            $bgElement.attr('data-attachment-id', attachment.id || '');
+                            
+                            // Ajouter la classe wp-image-X si on a un ID
+                            if (attachment.id) {
+                                $bgElement.removeClass(function(index, className) {
+                                    return (className.match(/(^|\s)wp-image-\S+/g) || []).join(' ');
+                                });
+                                $bgElement.addClass('wp-image-' + attachment.id);
+                            }
+                            
+                            // IMPORTANT: Préserver les attributs data-upfe-* s'ils existent déjà
+                            // (ils sont injectés par le PHP lors du rendu initial)
+                        } else {
+                            // C'est un div: mettre à jour le background-image
+                            $bgElement.css('background-image', 'url(' + attachment.url + ')');
+                            $bgElement.attr('data-attachment-id', attachment.id || '');
+                            
+                            // Ajouter la classe wp-image-X si on a un ID
+                            if (attachment.id) {
+                                $bgElement.removeClass(function(index, className) {
+                                    return (className.match(/(^|\s)wp-image-\S+/g) || []).join(' ');
+                                });
+                                $bgElement.addClass('wp-image-' + attachment.id);
+                            }
+                            
+                            // IMPORTANT: Préserver les attributs data-upfe-* s'ils existent déjà
                         }
                     } else {
-                        // Sinon chercher une balise img
-                        let $coverImg = $cover.find('img').first();
-                        
-                        if ($coverImg.length === 0) {
-                            // Créer un div avec background-image
-                            $bgDiv = $('<div class="wp-block-cover__image-background wp-image-' + attachment.id + ' has-parallax" style="background-position:50% 50%;background-image:url(' + attachment.url + ')"></div>');
-                            $bgDiv.attr('data-attachment-id', attachment.id || '');
-                            $cover.prepend($bgDiv);
-                        } else {
-                            // Mettre à jour l'image existante
-                            $coverImg.attr('src', attachment.url);
-                            $coverImg.attr('data-attachment-id', attachment.id || '');
-                        }
+                        // Pas d'élément trouvé: créer une img (sans data-upfe car nouveau)
+                        let $coverImg = $('<img class="wp-block-cover__image-background wp-image-' + attachment.id + '" src="' + attachment.url + '" data-object-fit="cover" />');
+                        $coverImg.attr('data-attachment-id', attachment.id || '');
+                        $cover.prepend($coverImg);
                     }
                 } else {
                     // Pour les images normales
@@ -255,14 +300,62 @@
             $button.find('span').removeClass('dashicons-yes').addClass('dashicons-update');
             
             // Récupérer le contenu modifié
-            const content = $editableContent.html();
-            
-            // Récupérer le titre modifié
-            const $title = $('.up-editable-title');
-            const newTitle = $title.length ? $title.text().trim() : '';
+            const $editableContent = $('.up-editable-content');
+            const content = $editableContent.length ? $editableContent.html() : '';
+
+            // Construire updates_map à partir des marqueurs data-upfe-*
+            function buildUpdatesMap(rootEl) {
+                const updates = {};
+                if (!rootEl) return updates;
+                const nodes = rootEl.querySelectorAll('[data-upfe-block][data-upfe-key][data-upfe-field]');
+                nodes.forEach((el) => {
+                    const uid = el.getAttribute('data-upfe-block');
+                    const key = el.getAttribute('data-upfe-key');
+                    const field = el.getAttribute('data-upfe-field');
+                    if (!uid || !key || !field) return;
+                    if (!updates[uid]) updates[uid] = {};
+                    if (field === 'text') {
+                        updates[uid][key] = { type: 'text', content: el.innerHTML };
+                    } else if (field === 'link') {
+                        updates[uid][key] = { type: 'link', content: el.innerHTML, href: el.getAttribute('href') || '' };
+                    } else if (field === 'image') {
+                        updates[uid][key] = {
+                            type: 'image',
+                            url: el.getAttribute('src') || '',
+                            srcset: el.getAttribute('srcset') || '',
+                            sizes: el.getAttribute('sizes') || '',
+                            width: el.getAttribute('width') || '',
+                            height: el.getAttribute('height') || '',
+                            alt: el.getAttribute('alt') || '',
+                            id: (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '')
+                        };
+                    } else if (field === 'cover') {
+                        // cover: peut être un div avec background-image OU un img
+                        let url = '';
+                        let id = '';
+                        if (el.tagName.toLowerCase() === 'img') {
+                            url = el.getAttribute('src') || '';
+                            id = (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '');
+                        } else {
+                            const style = el.getAttribute('style') || '';
+                            const m = style.match(/background-image:\s*url\(("|')?(.*?)\1\)/i);
+                            if (m && m[2]) url = m[2];
+                            id = (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '');
+                        }
+                        updates[uid][key] = { type: 'cover', url: url, id: id };
+                    }
+                });
+                try { console.log('[UPFE] updates_map blocks:', Object.keys(updates).length); } catch(e){}
+                return updates;
+            }
+            const updatesMap = buildUpdatesMap($editableContent.get(0));
             
             let savePromises = [];
-            
+
+            // Récupérer le titre courant
+            const $editableTitleNow = $('.up-editable-title');
+            const newTitle = $editableTitleNow.length ? $editableTitleNow.text() : '';
+
             // Sauvegarder le titre si modifié
             if (newTitle && newTitle !== originalTitle) {
                 const titlePromise = $.ajax({
@@ -278,18 +371,20 @@
                 savePromises.push(titlePromise);
             }
             
-            // Sauvegarder le contenu
-            const contentPromise = $.ajax({
-                url: upFrontendEditor.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'up_save_frontend_content',
-                    nonce: upFrontendEditor.nonce,
-                    post_id: upFrontendEditor.postId,
-                    content: content
-                }
+            // Sauvegarder le contenu via REST (fallback séquentiel ou updates si data-upfe-*)
+            const restPromise = $.ajax({
+                url: upFrontendEditor.restUrl + 'save/' + upFrontendEditor.postId,
+                method: 'POST',
+                data: JSON.stringify({ content_html: content, updates: updatesMap, base_serialized: baseSerialized }),
+                contentType: 'application/json; charset=UTF-8',
+                processData: false,
+                beforeSend: function(xhr){ xhr.setRequestHeader('X-WP-Nonce', upFrontendEditor.restNonce); }
+            }).done(function(){
+                if (window.console) console.log('[UPFE] REST save success');
+            }).fail(function(xhr){
+                if (window.console) console.error('[UPFE] REST save error', xhr);
             });
-            savePromises.push(contentPromise);
+            savePromises.push(restPromise);
             
             // Attendre que toutes les sauvegardes soient terminées
             $.when.apply($, savePromises)
@@ -310,6 +405,106 @@
                     $button.prop('disabled', false).removeClass('saving');
                     $button.find('span').removeClass('dashicons-update').addClass('dashicons-yes');
                 });
+        });
+        
+        // Bouton Créer un nouveau post
+        $('#up-create-post').on('click', function() {
+            const $button = $(this);
+            
+            if (!confirm('Créer un nouveau post basé sur le contenu actuel ?')) {
+                return;
+            }
+            
+            // Désactiver le bouton pendant la création
+            $button.prop('disabled', true).addClass('saving');
+            $button.find('span').removeClass('dashicons-plus').addClass('dashicons-update');
+            
+            // Récupérer le contenu actuel et le titre
+            const $editableContent = $('.up-editable-content');
+            const content = $editableContent.length ? $editableContent.html() : '';
+            const $editableTitle = $('.up-editable-title');
+            const title = $editableTitle.length ? $editableTitle.text() : '';
+            
+            // Construire updates_map à partir des marqueurs data-upfe-*
+            function buildUpdatesMap(rootEl) {
+                const updates = {};
+                if (!rootEl) return updates;
+                const nodes = rootEl.querySelectorAll('[data-upfe-block][data-upfe-key][data-upfe-field]');
+                nodes.forEach((el) => {
+                    const uid = el.getAttribute('data-upfe-block');
+                    const key = el.getAttribute('data-upfe-key');
+                    const field = el.getAttribute('data-upfe-field');
+                    if (!uid || !key || !field) return;
+                    if (!updates[uid]) updates[uid] = {};
+                    if (field === 'text') {
+                        updates[uid][key] = { type: 'text', content: el.innerHTML };
+                    } else if (field === 'link') {
+                        updates[uid][key] = { type: 'link', content: el.innerHTML, href: el.getAttribute('href') || '' };
+                    } else if (field === 'image') {
+                        updates[uid][key] = {
+                            type: 'image',
+                            url: el.getAttribute('src') || '',
+                            srcset: el.getAttribute('srcset') || '',
+                            sizes: el.getAttribute('sizes') || '',
+                            width: el.getAttribute('width') || '',
+                            height: el.getAttribute('height') || '',
+                            alt: el.getAttribute('alt') || '',
+                            id: (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '')
+                        };
+                    } else if (field === 'cover') {
+                        let url = '';
+                        let id = '';
+                        if (el.tagName.toLowerCase() === 'img') {
+                            url = el.getAttribute('src') || '';
+                            id = (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '');
+                        } else {
+                            const style = el.getAttribute('style') || '';
+                            const m = style.match(/background-image:\s*url\(("|')?(.*?)\1\)/i);
+                            if (m && m[2]) url = m[2];
+                            id = (el.getAttribute('data-attachment-id') || '').replace(/[^0-9]/g, '');
+                        }
+                        updates[uid][key] = { type: 'cover', url: url, id: id };
+                    }
+                });
+                return updates;
+            }
+            const updatesMap = buildUpdatesMap($editableContent.get(0));
+            
+            // Créer le post via AJAX avec le contenu
+            $.ajax({
+                url: upFrontendEditor.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'up_create_new_post',
+                    nonce: upFrontendEditor.nonce,
+                    post_type: upFrontendEditor.postType || 'post',
+                    title: title || '',
+                    content_html: content,
+                    updates: JSON.stringify(updatesMap),
+                    base_serialized: baseSerialized
+                }
+            })
+            .done(function(response) {
+                if (response.success && response.data.post_id) {
+                    showNotice('Post créé avec succès. Redirection...', 'success');
+                    // Rediriger vers le nouveau post après 1 seconde
+                    setTimeout(function() {
+                        window.location.href = response.data.permalink;
+                    }, 1000);
+                } else {
+                    showNotice(response.data.message || 'Erreur lors de la création', 'error');
+                    $button.prop('disabled', false).removeClass('saving');
+                    $button.find('span').removeClass('dashicons-update').addClass('dashicons-plus');
+                }
+            })
+            .fail(function(xhr) {
+                const message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message 
+                    ? xhr.responseJSON.data.message 
+                    : 'Erreur lors de la création du post';
+                showNotice(message, 'error');
+                $button.prop('disabled', false).removeClass('saving');
+                $button.find('span').removeClass('dashicons-update').addClass('dashicons-plus');
+            });
         });
         
         // Bouton Annuler

@@ -42,6 +42,7 @@
 }
 
 .up-save-button,
+.up-create-button,
 .up-cancel-button {
   background: #2271b1;
   color: #fff;
@@ -52,6 +53,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 13px;
+}
+
+.up-create-button {
+  background: #00a32a;
 }
 
 .up-cancel-button {
@@ -59,9 +65,16 @@
 }
 
 .up-save-button[disabled],
+.up-create-button[disabled],
 .up-cancel-button[disabled] {
   opacity: .5;
   cursor: not-allowed;
+}
+
+.up-save-button:hover:not([disabled]),
+.up-create-button:hover:not([disabled]),
+.up-cancel-button:hover:not([disabled]) {
+  opacity: .9;
 }
 
 /* Editable states */
@@ -133,6 +146,19 @@
   font-size: 20px;
   width: 20px;
   height: 20px;
+}
+
+/* Bouton flottant (sans wrapper) */
+.up-image-edit-btn.up-floating {
+  position: fixed; /* positionnée par JS */
+  opacity: 0;
+  pointer-events: none; /* ne capte pas tant qu'invisible */
+  z-index: 100000; /* au-dessus du contenu */
+}
+
+.up-image-edit-btn.up-floating.is-visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Bannières (blocs cover) */
